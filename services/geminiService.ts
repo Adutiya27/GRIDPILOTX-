@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { SimulationResult, WeatherCondition, SimulationParams } from "../types";
 
 const formatDataForPrompt = (result: SimulationResult, params: SimulationParams) => {
