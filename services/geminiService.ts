@@ -112,9 +112,11 @@ export const fetchAgraWeather = async (): Promise<{
 }> => {
   // Legacy scalar fetch - keeping for backward compatibility if needed, 
   // but fetchHourlyWeather is preferred for the new engine.
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) throw new Error("API Key not found");
-  const ai = new GoogleGenAI({ apiKey });
+ const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+if (!apiKey) throw new Error("Gemini API key missing!");
+
+const ai = new GoogleGenAI({ apiKey });
+
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
