@@ -115,7 +115,7 @@ export const fetchAgraWeather = async (): Promise<{
  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 if (!apiKey) throw new Error("Gemini API key missing!");
 
-const ai = new GoogleGenAI({ apiKey });
+const ai = new GoogleGenerativeAI(apiKey);
 
   try {
     const response = await ai.models.generateContent({
@@ -165,7 +165,7 @@ export const fetchHourlyWeather = async (): Promise<{
   sunriseHour: number;
   sunsetHour: number;
 }> => {
-  const apiKey = process.env.API_KEY;
+ const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) throw new Error("API Key not found");
   const ai = new GoogleGenAI({ apiKey });
 
@@ -177,26 +177,40 @@ export const fetchHourlyWeather = async (): Promise<{
     Important: ensure arrays have exactly 24 numbers.
   `;
 
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: prompt,
-      config: {
-        tools: [{ googleSearch: {} }],
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            hourlyTemp: { type: Type.ARRAY, items: { type: Type.NUMBER } },
-            hourlyHumidity: { type: Type.ARRAY, items: { type: Type.NUMBER } },
-            hourlyCloud: { type: Type.ARRAY, items: { type: Type.NUMBER } },
-            sunriseTime: { type: Type.STRING, description: "Format HH:MM in 24h format" },
-            sunsetTime: { type: Type.STRING, description: "Format HH:MM in 24h format" }
-          },
-          required: ["hourlyTemp", "hourlyHumidity", "hourlyCloud", "sunriseTime", "sunsetTime"]
-        }
+try {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) throw new Error("Gemini API key missing");
+
+  const ai = new GoogleGenerativeAI(apiKey);
+  const model = ai.getGenerativeModel({
+    model: "gemini-1.5-flash"
+  });
+
+  const response = await model.generateContent({
+    contents: [
+      {
+        role: "user",
+        parts: [{ text: prompt }]
       }
-    });
+    ]
+  });
+
+  const raw = response.response.text();
+  const data = JSON.parse(raw);
+
+  return {
+    hourlyTemp: data.hourlyTemp ?? [],
+    hourlyHumidity: data.hourlyHumidity ?? [],
+    hourlyCloud: data.hourlyCloud ?? [],
+    sunriseTime: data.sunriseTime ?? "06:00",
+    sunsetTime: data.sunsetTime ?? "18:00"
+  };
+
+} catch (err) {
+  console.error("Weather AI failed:", err);
+  throw new Error("Failed to fetch hourly weather data");
+}
+
 
     const data = JSON.parse(response.text);
     
